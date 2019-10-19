@@ -2,6 +2,9 @@ import zipfile
 import pandas as pd
 import re
 import json
+import unicodedata
+import datetime
+import copy 
 from typing import List, Tuple, Union
 
 
@@ -53,7 +56,7 @@ class MessengerStats:
                         return user_tuple[0]
                 try:
                     index = participants_list.index(name)
-                    participants_in_chat.append((index,name))
+                    participants_in_chat.append((index, name))
                     return index
                 except:
                     participants_list.append(name)
@@ -98,7 +101,7 @@ class MessengerStats:
         )
         messages = pd.DataFrame(
             data=messages_list,
-            columns={"thread_id": int, "sender_id": int,
+            columns={"chat_id": int, "sender_id": int,
                      "timestamp": pd.Timestamp, "content": str, "type": "category"}
         )
         messages["type"] = messages["type"].astype("category")
@@ -109,8 +112,54 @@ class MessengerStats:
         )
         reactions["reaction"] = reactions["reaction"].astype("category")
         return cls(participants, chats, participation, messages, reactions)
-        
+
+    def get_regular_chats(self) -> pd.DataFrame:
+        filtered = self.chats
+        is_regular = filtered["thread_type"] == "Regular"
+        filtered = filtered[is_regular]
+        return filtered
+
+    def get_largest_chats(self, only_regular=False) -> pd.DataFrame:
+        messages_by_chat = self.messages.groupby(
+            ["chat_id"]).size().sort_values(ascending=False)
+        largest_chat_titles = [self.chats.loc[x].at["title"]
+                               for x in messages_by_chat.index.values]
+        largest_chats = pd.DataFrame(
+            {"title": largest_chat_titles, "message_count": messages_by_chat})
+        return largest_chats
+
+    def get_time_range(self) -> Tuple[datetime.datetime, datetime.datetime]:
+        return (self.messages["timestamp"].min(), self.messages["timestamp"].max())
+
+    def filter_chat_types(self, chat_type: Union[List[str],str]):
+        new = copy.deepcopy(self)
+        # Remove chats of other type
+        if type(chat_type) == str:
+            new.chats = new.chats[new.chats["thread_type"] == chat_type]
+        else:
+            new.chats = new.chats[[(w in chat_type) for w in new.chats["thread_type"]]]
+        # Remove participations belonging to removed chats
+        new.participation = new.participation[[(x in new.chats.index) for x in new.participation["chat_id"]]]
+        # Remove messages belonging to removed chats
+        new.messages = new.messages[[(y in new.chats.index) for y in new.messages["chat_id"]]]
+        # Remove reactions belonging to removed messages
+        new.reactions = new.reactions[[(z in new.messages.index) for z in new.reactions["message_id"]]]
+        return new
+
+    def filter_chat_types_not(self, chat_type: Union[List[str], str]):
+        all = self.chats["thread_type"].cat.categories
+        chat_type = [chat_type] if type(chat_type) == str else chat_type # type: ignore
+        types_to_keep = [item for item in all if item not in chat_type]
+        new = copy.deepcopy(self)
+        new = new.filter_chat_types(types_to_keep)
+        return new
+
+    def filter_time(self, time_ranges: List[Tuple[datetime.datetime, datetime.datetime]]):
+        new = copy.deepcopy(self)
+        # Remove messages outside specified time ranges
+        new.messages = new.messages[[True in [(r[0] <= t and t <= r[1]) for r in time_ranges] for t in new.messages["timestamp"]]]
+        return new
 
 def _fix_encoding(messed_up_unicode_string: str) -> str:
     """Fix messed-up UTF-8 encoding"""
-    return messed_up_unicode_string.encode("latin1").decode("utf-8")
+    return unicodedata.normalize("NFKC", messed_up_unicode_string.encode("latin1").decode("utf-8"))
