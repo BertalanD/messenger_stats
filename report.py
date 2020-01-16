@@ -1,6 +1,7 @@
 import sys
 import os
 import zipfile
+import webbrowser
 assert sys.version_info >= (3,7), "messenger_stats requires python version 3.7 or newer."
 
 if __name__ == "__main__":

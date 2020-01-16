@@ -1,6 +1,5 @@
 .vscode
 .mypy_cache
-test.py
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json

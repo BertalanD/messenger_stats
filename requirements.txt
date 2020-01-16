@@ -1,5 +1,6 @@
 # Requirements for BertalanD's messenger_stas #
 pandas
-jupyter
-ipywidgets
 plotly
+pytz
+tzlocal
+typing_extensions
