@@ -11,9 +11,9 @@ Are you curious about your time on Facebook Messenger? Do you like noticing patt
 1. From your distribution's package manager or from the [official website](https://www.python.org/downloads/) download Python programming language. Version 3.7 or higher is required.
 2. During installation, make sure *pip* gets installed as well.
 3. Install dependencies with *pip*.
-    ````
+    ```
     pip install -r requirements.txt
-    ````
+    ```
 ### Generate HTML report
 Run the `report.py` script. Answer the prompts to get the data you need.
 
@@ -21,7 +21,7 @@ Not implemented yet.
 
 ### Interactive analysis
 Open a console in the directory where this file is located, then type 
-````
+```
 jupyter notebook
-```` 
-From the file tree, open `statistics.ipynb`. Follow the instructions therein.
+``` 
+From the file tree, open [`Messenger Statistics.ipynb`](./Statistics.ipynb). Follow the instructions therein.
